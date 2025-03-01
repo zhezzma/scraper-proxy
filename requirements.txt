@@ -7,17 +7,17 @@ anyio==4.8.0
 certifi==2025.1.31
     # via requests
 chardet==5.2.0
-    # via scrapercookie (pyproject.toml)
+    # via scraperproxy (pyproject.toml)
 charset-normalizer==3.4.1
     # via requests
 click==8.1.8
     # via uvicorn
 cloudscraper==1.2.71
-    # via scrapercookie (pyproject.toml)
+    # via scraperproxy (pyproject.toml)
 colorama==0.4.6
     # via click
 fastapi==0.115.10
-    # via scrapercookie (pyproject.toml)
+    # via scraperproxy (pyproject.toml)
 h11==0.14.0
     # via uvicorn
 idna==3.10
@@ -26,7 +26,7 @@ idna==3.10
     #   requests
 pydantic==2.10.6
     # via
-    #   scrapercookie (pyproject.toml)
+    #   scraperproxy (pyproject.toml)
     #   fastapi
 pydantic-core==2.27.2
     # via pydantic
@@ -44,11 +44,11 @@ starlette==0.46.0
     # via fastapi
 typing-extensions==4.12.2
     # via
-    #   scrapercookie (pyproject.toml)
+    #   scraperproxy (pyproject.toml)
     #   fastapi
     #   pydantic
     #   pydantic-core
 urllib3==2.3.0
     # via requests
 uvicorn==0.34.0
-    # via scrapercookie (pyproject.toml)
+    # via scraperproxy (pyproject.toml)

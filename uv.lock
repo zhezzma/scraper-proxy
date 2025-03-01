@@ -245,7 +245,7 @@ wheels = [
 ]
 
 [[package]]
-name = "scrapercookie"
+name = "scraperproxy"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
