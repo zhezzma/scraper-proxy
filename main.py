@@ -1,3 +1,4 @@
+import os
 import cloudscraper
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -43,18 +44,31 @@ async def proxy(request: Request, path: str, target_url: Optional[str] = None):
             if not target_url:
                 raise HTTPException(status_code=400, detail="必须提供目标URL")
         
-        # 获取原始请求头
-        headers = dict(request.headers)
-        # 移除可能导致问题的头
-        headers.pop("host", None)
-        headers.pop("content-length", None)
-        
+
         # 检查是否请求流式响应
         stream_request = "stream" in request.query_params and request.query_params["stream"].lower() in ["true", "1", "yes"]
         
+        # 创建带有代理的 scraper
         # 创建cloudscraper实例
         scraper = cloudscraper.create_scraper()
         
+        # 从请求中获取cookies并设置到scraper
+        cookies = request.cookies
+        for key, value in cookies.items():
+            scraper.cookies.set(key, value)
+            
+        # 检查环境变量PROXY是否存在
+        proxy = os.environ.get('PROXY')
+        if proxy:
+            # 如果环境变量存在，则设置代理
+            scraper.proxies = {
+                'http': proxy,
+                'https': proxy
+            }
+        # 测试代理是否生效
+        response = scraper.get('https://httpbin.org/ip')
+        print(response.text)
+
         # 获取请求体
         body = await request.body()
         
@@ -64,6 +78,24 @@ async def proxy(request: Request, path: str, target_url: Optional[str] = None):
         params.pop("url", None)
         params.pop("stream", None)
         
+        # 获取原始请求头
+        headers = dict(request.headers)
+        # 移除可能导致问题的头
+        headers.pop("host", None)
+        headers.pop("content-length", None)
+        headers.pop("cookie", None) # 已经取出cookies
+        headers.pop("x-forwarded-for", None)
+        headers.pop("x-forwarded-proto", None)
+        headers.pop("x-forwarded-port", None)
+        headers.pop("x-amzn-trace-id", None)
+        headers.pop("x-request-id", None)
+        headers.pop("x-ip-token", None)
+        headers.pop("x-direct-url", None)
+        headers.pop("x-direct-url", None)
+        headers.pop("content-type", None) # 会403
+        headers.pop("user-agent", None) # 会403
+        headers.pop("accept-encoding", None) # 影响编码
+        print(f"{headers}")
         # 构建请求参数
         request_kwargs = {
             "url": target_url,
