@@ -69,6 +69,8 @@ async def proxy(request: Request, path: str, target_url: Optional[str] = None):
         response = scraper.get('https://httpbin.org/ip')
         print(response.text)
 
+
+            
         # 获取请求体
         body = await request.body()
         
@@ -78,12 +80,12 @@ async def proxy(request: Request, path: str, target_url: Optional[str] = None):
         params.pop("url", None)
         params.pop("stream", None)
         
+        
         # 获取原始请求头
         headers = dict(request.headers)
         # 移除可能导致问题的头
         headers.pop("host", None)
-        headers.pop("content-length", None)
-        headers.pop("cookie", None) # 已经取出cookies
+        headers.pop("cookie", None)
         headers.pop("x-forwarded-for", None)
         headers.pop("x-forwarded-proto", None)
         headers.pop("x-forwarded-port", None)
@@ -92,9 +94,12 @@ async def proxy(request: Request, path: str, target_url: Optional[str] = None):
         headers.pop("x-ip-token", None)
         headers.pop("x-direct-url", None)
         headers.pop("x-direct-url", None)
-        headers.pop("content-type", None) # 会403
-        headers.pop("user-agent", None) # 会403
-        headers.pop("accept-encoding", None) # 影响编码
+        headers.pop("accept", None)
+        headers.pop("accept-language", None)
+        headers.pop("accept-encoding", None)
+        headers.pop("content-type", None)
+        headers.pop("content-length", None)
+        headers.pop("user-agent", None)
         print(f"{headers}")
         # 构建请求参数
         request_kwargs = {
