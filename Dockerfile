@@ -1,19 +1,18 @@
-FROM python:3.11-slim
+FROM python:3.13-slim
 
-# 设置工作目录
 WORKDIR /app
 
-# 安装uv
-RUN pip install uv
+# 复制依赖文件
+COPY requirements.txt .
+
+# 安装依赖
+RUN pip install --no-cache-dir -r requirements.txt
 
 # 复制项目文件
-COPY . /app/
-
-# 使用uv安装依赖
-RUN uv pip install -r requirements.txt
+COPY . .
 
 # 暴露端口
 EXPOSE 7860
 
-# 启动服务
-CMD ["python", "main.py"]
+# 启动命令
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7860"]

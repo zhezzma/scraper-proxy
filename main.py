@@ -1,13 +1,14 @@
 import cloudscraper
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, HttpUrl
-from typing import Dict, Any, Optional
+from fastapi.responses import StreamingResponse
+from typing import Optional
 import uvicorn
+import asyncio
 
 app = FastAPI(
     title="ScraperCookie",
-    description="一个用于获取外部网站cookie的服务",
+    description="一个使用CloudScraper进行请求转发的代理，支持流式响应",
     version="0.1.0"
 )
 
@@ -20,42 +21,118 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+async def stream_generator(response):
+    """生成流式响应的生成器函数"""
+    for chunk in response.iter_content(chunk_size=8192):
+        if chunk:
+            yield chunk
+            await asyncio.sleep(0.001)  # 让出控制权，保持异步特性
 
-class CookieResponse(BaseModel):
-    cookies: Dict[str, str]
-
-
-@app.get("/get-cookies", response_model=CookieResponse)
-async def get_cookies(url: str = Query(..., description="要获取cookie的网站URL")):
+@app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"])
+async def proxy(request: Request, path: str, target_url: Optional[str] = None):
     """
-    获取指定URL的cookies
+    通用代理端点，转发所有请求到目标URL，支持流式响应
     """
     try:
+        # 获取请求方法
+        method = request.method
+        
+        # 获取目标URL
+        if not target_url:
+            target_url = request.query_params.get("url")
+            if not target_url:
+                raise HTTPException(status_code=400, detail="必须提供目标URL")
+        
+        # 获取原始请求头
+        headers = dict(request.headers)
+        # 移除可能导致问题的头
+        headers.pop("host", None)
+        headers.pop("content-length", None)
+        
+        # 检查是否请求流式响应
+        stream_request = "stream" in request.query_params and request.query_params["stream"].lower() in ["true", "1", "yes"]
+        
         # 创建cloudscraper实例
         scraper = cloudscraper.create_scraper()
         
-        # 发送请求获取cookies
-        response = scraper.get(url)
+        # 获取请求体
+        body = await request.body()
         
-        # 检查请求是否成功
-        if response.status_code != 200:
-            raise HTTPException(status_code=response.status_code, detail=f"请求失败: {response.status_code}")
+        # 获取查询参数
+        params = dict(request.query_params)
+        # 从查询参数中移除url和stream参数
+        params.pop("url", None)
+        params.pop("stream", None)
         
-        # 提取cookies
-        cookies = {}
-        for name, value in response.cookies.items():
-            cookies[name] = value
+        # 构建请求参数
+        request_kwargs = {
+            "url": target_url,
+            "headers": headers,
+            "params": params,
+            "stream": stream_request  # 设置stream参数
+        }
         
-        return {"cookies": cookies}
-    
+        # 如果有请求体，添加到请求参数中
+        if body:
+            request_kwargs["data"] = body
+        
+        # 发送请求
+        if method == "GET":
+            response = scraper.get(**request_kwargs)
+        elif method == "POST":
+            response = scraper.post(**request_kwargs)
+        elif method == "PUT":
+            response = scraper.put(**request_kwargs)
+        elif method == "DELETE":
+            response = scraper.delete(**request_kwargs)
+        elif method == "HEAD":
+            response = scraper.head(**request_kwargs)
+        elif method == "OPTIONS":
+            response = scraper.options(**request_kwargs)
+        elif method == "PATCH":
+            response = scraper.patch(**request_kwargs)
+        else:
+            raise HTTPException(status_code=405, detail=f"不支持的方法: {method}")
+        
+        # 处理流式响应
+        if stream_request:
+            # 创建响应头字典
+            headers_dict = {}
+            for header_name, header_value in response.headers.items():
+                if header_name.lower() not in ('content-encoding', 'transfer-encoding', 'content-length'):
+                    headers_dict[header_name] = header_value
+            
+            # 返回流式响应
+            return StreamingResponse(
+                stream_generator(response),
+                status_code=response.status_code,
+                headers=headers_dict,
+                media_type=response.headers.get("content-type", "application/octet-stream")
+            )
+        else:
+            # 创建普通响应
+            proxy_response = Response(
+                content=response.content,
+                status_code=response.status_code,
+            )
+            
+            # 转发响应头
+            for header_name, header_value in response.headers.items():
+                if header_name.lower() not in ('content-encoding', 'transfer-encoding', 'content-length'):
+                    proxy_response.headers[header_name] = header_value
+                    
+            # 转发cookies
+            for cookie_name, cookie_value in response.cookies.items():
+                proxy_response.set_cookie(key=cookie_name, value=cookie_value)
+                
+            return proxy_response
+        
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"获取cookies时出错: {str(e)}")
-
+        raise HTTPException(status_code=500, detail=f"代理请求失败: {str(e)}")
 
 @app.get("/")
 async def root():
-    return {"message": "欢迎使用ScraperCookie API，访问 /docs 查看API文档"}
-
+    return {"message": "欢迎使用ScraperProxy API，访问 /docs 查看API文档"}
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=7860, reload=True)

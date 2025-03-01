@@ -1,12 +1,12 @@
 # ScraperCookie
 
-一个使用FastAPI和Cloudscraper的服务，用于获取外部网站的cookie并返回。
+一个使用FastAPI和Cloudscraper的服务，用于获取代理外部网站
 
 ## 功能
 
 - 接收网站URL作为输入
 - 使用Cloudscraper绕过常见的反爬虫保护
-- 返回目标网站的cookie
+
 
 ## 技术栈
 
@@ -17,15 +17,6 @@
 
 ## 安装与运行
 
-### 使用Docker
-
-```bash
-# 构建Docker镜像
-docker build -t scrapercookie .
-
-# 运行容器
-docker run -p 8000:8000 scrapercookie
-```
 
 ### 本地开发
 
@@ -33,6 +24,12 @@ docker run -p 8000:8000 scrapercookie
 
 # 初始化环境并指定版本
 uv init ./
+
+# 初始化环境并指定版本
+uv init ./ --python=3.10.16
+
+# 创建虚拟环境并指定版本
+uv venv --python=3.10.16
 
 # 创建虚拟环境并指定版本
 uv venv 
@@ -52,6 +49,7 @@ index-url = "https://mirrors.aliyun.com/pypi/simple/"
 
 # 安装
 uv add requests
+uv add gradio==5.4.0
 
 # 安装到dev组中,一般是tool之类的
 uv add poethepoet --dev    
@@ -60,7 +58,6 @@ uv add poethepoet --dev
 [tool.poe.tasks]
 dev = "python main.py"
 freeze =  { shell = "uv pip compile pyproject.toml -o requirements.txt" }
-
 
 # 安装依赖
 uv pip install -r requirements.txt
@@ -71,19 +68,6 @@ python main.py
 
 ## API使用
 
-### 获取网站Cookie
-
 ```
-GET /get-cookies?url=https://example.com
-```
-
-响应示例:
-
-```json
-{
-  "cookies": {
-    "cookie_name1": "cookie_value1",
-    "cookie_name2": "cookie_value2"
-  }
-}
+请求 ?url=https://example.com&stream=true
 ```
