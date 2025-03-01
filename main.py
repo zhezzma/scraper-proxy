@@ -29,8 +29,12 @@ async def stream_generator(response):
             yield chunk
             await asyncio.sleep(0.001)  # 让出控制权，保持异步特性
 
-@app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"])
-async def proxy(request: Request, path: str, target_url: Optional[str] = None):
+@app.get("/")
+async def root():
+    return {"message": "欢迎使用ScraperProxy API，访问 /docs 查看API文档"}
+
+@app.api_route("/proxy", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"])
+async def proxy(request: Request):
     """
     通用代理端点，转发所有请求到目标URL，支持流式响应
     """
@@ -38,13 +42,10 @@ async def proxy(request: Request, path: str, target_url: Optional[str] = None):
         # 获取请求方法
         method = request.method
         
-        # 获取目标URL
+        target_url = request.query_params.get("url")
         if not target_url:
-            target_url = request.query_params.get("url")
-            if not target_url:
-                raise HTTPException(status_code=400, detail="必须提供目标URL")
+            raise HTTPException(status_code=400, detail="必须提供目标URL")
         
-
         # 检查是否请求流式响应
         stream_request = "stream" in request.query_params and request.query_params["stream"].lower() in ["true", "1", "yes"]
         
@@ -167,9 +168,7 @@ async def proxy(request: Request, path: str, target_url: Optional[str] = None):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"代理请求失败: {str(e)}")
 
-@app.get("/")
-async def root():
-    return {"message": "欢迎使用ScraperProxy API，访问 /docs 查看API文档"}
+
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=7860, reload=True)

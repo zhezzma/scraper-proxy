@@ -69,5 +69,5 @@ python main.py
 ## API使用
 
 ```
-请求 ?url=https://example.com&stream=true
+请求 /proxy?url=https://example.com&stream=true
 ```
