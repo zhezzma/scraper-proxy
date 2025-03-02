@@ -99,18 +99,16 @@ async def proxy(request: Request):
         env_token = os.environ.get('TOKEN')
         if env_token:
             # 从请求头获取Authorization
-            auth_header = request.headers.get('Authorization')
-            if not auth_header or not auth_header.startswith('Bearer '):
+            auth_header = request.headers.get('x-ip-token')
+            if not auth_header:
                 raise HTTPException(
                     status_code=401,
-                    detail="未提供有效的Authorization header",
-                    headers={"WWW-Authenticate": "Bearer"}
+                    detail="未提供有效的x-ip-token header",
+                    headers={"WWW-Authenticate": "x-ip-token"}
                 )
             
-            # 提取Bearer token
-            token = auth_header.split(' ')[1]
             # 验证token
-            if token != env_token:
+            if auth_header != env_token:
                 raise HTTPException(
                     status_code=403,
                     detail="Token无效"
@@ -143,8 +141,6 @@ async def proxy(request: Request):
         # 获取原始请求头
         headers = dict(request.headers)
         # 移除可能导致问题的头
-        headers.pop("host", None)
-        headers.pop("authorization", None) 
         headers.pop("x-forwarded-for", None)
         headers.pop("x-forwarded-proto", None)
         headers.pop("x-forwarded-port", None)
@@ -152,6 +148,7 @@ async def proxy(request: Request):
         headers.pop("x-request-id", None)
         headers.pop("x-ip-token", None)
         headers.pop("x-direct-url", None)
+        headers.pop("host", None)
         headers.pop("referer", None)
         print(f"{headers}")
         
