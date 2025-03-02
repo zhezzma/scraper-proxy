@@ -378,11 +378,11 @@ async def proxy(request: Request):
         # 创建带有代理的 scraper
         # 创建cloudscraper实例
         scraper = cloudscraper.create_scraper(
-            browser={
-                'browser': 'chrome',
-                'platform': 'windows',
-                'mobile': False
-            },
+            # browser={
+            #     'browser': 'chrome',
+            #     'platform': 'windows',
+            #     'mobile': False
+            # },
             debug=True,
             delay=10
         )
@@ -413,7 +413,7 @@ async def proxy(request: Request):
 
         # 重试获取主页响应
         max_retries = 3
-        retry_delay = 15  # 重试间隔秒数
+        retry_delay = 1  # 重试间隔秒数
         home_response = None
         
         for attempt in range(max_retries):
