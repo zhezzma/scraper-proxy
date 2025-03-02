@@ -52,6 +52,7 @@ REQUEST_LIB = os.environ.get('REQUEST_LIB', 'curl_cffi').lower()
 
 async def make_request(method: str, **kwargs):
     """统一的请求处理函数"""
+    print(f"开始使用{REQUEST_LIB}进行请求")
     if REQUEST_LIB == 'cloudscraper':
         scraper = cloudscraper.create_scraper(delay=10)
         
@@ -151,7 +152,7 @@ async def proxy(request: Request):
         headers.pop("x-request-id", None)
         headers.pop("x-ip-token", None)
         headers.pop("x-direct-url", None)
-        headers.pop("x-direct-url", None)
+        headers.pop("referer", None)
         print(f"{headers}")
         
         # 构建请求参数
