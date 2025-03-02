@@ -377,7 +377,15 @@ async def proxy(request: Request):
         
         # 创建带有代理的 scraper
         # 创建cloudscraper实例
-        scraper = cloudscraper.create_scraper()
+        scraper = cloudscraper.create_scraper(
+            browser={
+                'browser': 'chrome',
+                'platform': 'windows',
+                'mobile': False
+            },
+            debug=True,
+            delay=10
+        )
         
         # 从请求中获取cookies并设置到scraper
         cookies = request.cookies
