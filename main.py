@@ -383,8 +383,12 @@ async def proxy(request: Request):
             #     'platform': 'windows',
             #     'mobile': False
             # },
+            # captcha={
+            #     'provider': '2captcha',
+            #     'api_key': ' '
+            # },
             #debug=True,
-            #delay=10
+            delay=10
         )
         
         # 从请求中获取cookies并设置到scraper
@@ -412,7 +416,7 @@ async def proxy(request: Request):
             home_url = f"{parsed_url.scheme}://{parsed_url.netloc}/"
 
         # 重试获取主页响应
-        max_retries = 10
+        max_retries = 3
         retry_delay = 1  # 重试间隔秒数
         home_response = None
 
