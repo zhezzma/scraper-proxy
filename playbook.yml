@@ -5,12 +5,26 @@
     - name: 停止旧服务
       shell: |
         pid=$(ps -ef | grep "uvicorn main:app" | grep -v grep | awk '{print $2}')
-        if [ ! -z "$pid"; then
-          kill -9 $pid
+        if [ -n "$pid" ]; then
+          echo "Stopping process with PID: $pid"
+          kill -15 $pid
+          sleep 3
+          if ps -p $pid > /dev/null 2>&1; then
+            echo "Force killing process with PID: $pid"
+            kill -9 $pid
+          fi
+        else
+          echo "No running process found"
         fi
       args:
         executable: /bin/bash
       ignore_errors: yes
+      
+    - name: 确认服务已停止
+      wait_for:
+        port: 7860
+        state: stopped
+        timeout: 30
 
     - name: 复制到远程服务器
       copy:
@@ -37,5 +51,3 @@
       wait_for:
         port: 7860
         timeout: 30
-
-
