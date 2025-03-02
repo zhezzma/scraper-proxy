@@ -415,11 +415,10 @@ async def proxy(request: Request):
         max_retries = 10
         retry_delay = 1  # 重试间隔秒数
         home_response = None
-        scraper.get("https://www.baidu.com")
+
         for attempt in range(max_retries):
             try:
                 home_response = scraper.get(home_url, headers= {
-                    'referer': 'https://www.baidu.com/',
                     "sec-fetch-dest": "document"
                     })
                 print(f"主页{home_url}响应 (尝试 {attempt + 1}): {home_response.status_code}")
