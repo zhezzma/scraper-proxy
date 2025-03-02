@@ -5,7 +5,11 @@ annotated-types==0.7.0
 anyio==4.8.0
     # via starlette
 certifi==2025.1.31
-    # via requests
+    # via
+    #   curl-cffi
+    #   requests
+cffi==1.17.1
+    # via curl-cffi
 chardet==5.2.0
     # via scraperproxy (pyproject.toml)
 charset-normalizer==3.4.1
@@ -16,6 +20,8 @@ cloudscraper==1.2.71
     # via scraperproxy (pyproject.toml)
 colorama==0.4.6
     # via click
+curl-cffi==0.9.0
+    # via scraperproxy (pyproject.toml)
 fastapi==0.115.10
     # via scraperproxy (pyproject.toml)
 h11==0.14.0
@@ -24,6 +30,8 @@ idna==3.10
     # via
     #   anyio
     #   requests
+pycparser==2.22
+    # via cffi
 pydantic==2.10.6
     # via
     #   scraperproxy (pyproject.toml)
@@ -32,6 +40,8 @@ pydantic-core==2.27.2
     # via pydantic
 pyparsing==3.2.1
     # via cloudscraper
+python-dotenv==1.0.1
+    # via scraperproxy (pyproject.toml)
 requests==2.32.3
     # via
     #   cloudscraper
