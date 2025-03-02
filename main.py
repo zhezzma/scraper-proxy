@@ -411,7 +411,7 @@ async def proxy(request: Request):
         for attempt in range(max_retries):
             try:
                 home_response = scraper.get(home_url, headers={"sec-fetch-dest": "document"})
-                print(f"主页响应 (尝试 {attempt + 1}): {home_response.status_code}")
+                print(f"主页{home_url}响应 (尝试 {attempt + 1}): {home_response.status_code}")
                 
                 if home_response.status_code == 200:
                     break
