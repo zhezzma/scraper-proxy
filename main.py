@@ -412,8 +412,8 @@ async def proxy(request: Request):
             home_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
 
         # 重试获取主页响应
-        max_retries = 3
-        retry_delay = 1  # 重试间隔秒数
+        max_retries = 10
+        retry_delay = 2  # 重试间隔秒数
         home_response = None
         
         for attempt in range(max_retries):
