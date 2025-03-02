@@ -413,7 +413,7 @@ async def proxy(request: Request):
 
         # 重试获取主页响应
         max_retries = 3
-        retry_delay = 10  # 重试间隔秒数
+        retry_delay = 15  # 重试间隔秒数
         home_response = None
         
         for attempt in range(max_retries):
