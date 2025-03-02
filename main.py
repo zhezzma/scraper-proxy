@@ -48,7 +48,7 @@ async def stream_generator(response):
             await asyncio.sleep(0.001)  # 让出控制权，保持异步特性
 
 # 获取环境变量中的请求库选择
-REQUEST_LIB = os.environ.get('REQUEST_LIB', 'cloudscraper').lower()
+REQUEST_LIB = os.environ.get('REQUEST_LIB', 'curl_cffi').lower()
 
 async def make_request(method: str, **kwargs):
     """统一的请求处理函数"""
