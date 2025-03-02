@@ -8,3 +8,13 @@ master:
           script: echo $GITHUB_TOKEN_GK && echo $GITHUB_TOKEN && node -v && npm -v
         - name: 将master分支同步更新到github的main分支
           script: git push https://$GITHUB_TOKEN_GK:$GITHUB_TOKEN@github.com/zhezzma/scraper-proxy.git HEAD:main
+        - name: 构建并打包
+          script: | 
+            mkdir archive
+            tar --exclude='./archive' --exclude='.git' -zcvf archive/release.tar.gz .
+        - name: ansible发布
+          image: plugins/ansible
+          settings:
+            private_key: $SERVER_PRIVATE_KEY
+            inventory: hosts
+            playbook: playbook.yml

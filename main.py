@@ -342,6 +342,27 @@ async def proxy(request: Request):
     通用代理端点，转发所有请求到目标URL，支持流式响应
     """
     try:
+        # 获取环境变量中的token
+        env_token = os.environ.get('TOKEN')
+        if env_token:
+            # 从请求头获取Authorization
+            auth_header = request.headers.get('Authorization')
+            if not auth_header or not auth_header.startswith('Bearer '):
+                raise HTTPException(
+                    status_code=401,
+                    detail="未提供有效的Authorization header",
+                    headers={"WWW-Authenticate": "Bearer"}
+                )
+            
+            # 提取Bearer token
+            token = auth_header.split(' ')[1]
+            # 验证token
+            if token != env_token:
+                raise HTTPException(
+                    status_code=403,
+                    detail="Token无效"
+                )
+
         # 获取请求方法
         method = request.method
         
@@ -389,6 +410,7 @@ async def proxy(request: Request):
         headers = dict(request.headers)
         # 移除可能导致问题的头
         headers.pop("host", None)
+        headers.pop("authorization", None)
         headers.pop("cookie", None)
         headers.pop("x-forwarded-for", None)
         headers.pop("x-forwarded-proto", None)

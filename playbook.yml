@@ -1,0 +1,41 @@
+- name: My first play
+  hosts: hostgroup
+  remote_user: root
+  tasks:
+    - name: 停止旧服务
+      shell: |
+        pid=$(ps -ef | grep "uvicorn main:app" | grep -v grep | awk '{print $2}')
+        if [ ! -z "$pid"; then
+          kill -9 $pid
+        fi
+      args:
+        executable: /bin/bash
+      ignore_errors: yes
+
+    - name: 复制到远程服务器
+      copy:
+        src: archive/release.tar.gz
+        dest: /root/deploy/scraper-proxy.tar.gz
+
+    - name: 解压文件
+      shell: |
+        rm -rf /root/workspace/scraper-proxy  
+        mkdir -p /root/workspace/scraper-proxy
+        tar -zxvf /root/deploy/scraper-proxy.tar.gz -C /root/workspace/scraper-proxy
+      args:
+        executable: /bin/bash
+
+    - name: 构建并运行
+      shell: |
+        cd /root/workspace/scraper-proxy
+        pip install --no-cache-dir -r requirements.txt
+        nohup uvicorn main:app --host 0.0.0.0 --port 7860 > ./nohup.log 2>&1 &
+      args:
+        executable: /bin/bash
+
+    - name: 等待服务启动
+      wait_for:
+        port: 7860
+        timeout: 30
+
+
