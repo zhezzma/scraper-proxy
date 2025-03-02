@@ -11,8 +11,19 @@ import time
 from curl_cffi import requests 
 from dotenv import load_dotenv
 
-# 加载.env文件
-load_dotenv()
+# 加载多个位置的.env文件
+def load_env_files():
+    # 优先尝试加载根目录下的.env
+    if os.path.exists('.env'):
+        load_dotenv('.env')
+    
+    # 然后尝试加载 /root/deploy/.scraper.env
+    deploy_env_path = os.path.join('/root/deploy', '.scraper.env')
+    if os.path.exists(deploy_env_path):
+        load_dotenv(deploy_env_path)
+
+# 执行环境变量加载
+load_env_files()
 
 app = FastAPI(
     title="ScraperProxy",
