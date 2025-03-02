@@ -6,6 +6,8 @@ from fastapi.responses import HTMLResponse, StreamingResponse
 from typing import Optional
 import uvicorn
 import asyncio
+from urllib.parse import urlparse
+import time
 
 app = FastAPI(
     title="ScraperProxy",
@@ -391,11 +393,37 @@ async def proxy(request: Request):
                 'https': proxy
             }
         # 测试代理是否生效
-        response = scraper.get('https://httpbin.org/ip')
-        print(response.text)
+        # response = scraper.get('https://httpbin.org/ip')
+        # print(response.text)
 
+        # 获取home_url
+        home_url = request.query_params.get("home")
+        if not home_url:
+            # 从target_url中提取home_url
+            parsed_url = urlparse(target_url)
+            home_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
 
-            
+        # 重试获取主页响应
+        max_retries = 5
+        retry_delay = 1  # 重试间隔秒数
+        home_response = None
+        
+        for attempt in range(max_retries):
+            try:
+                home_response = scraper.get(home_url, headers={"sec-fetch-dest": "document"})
+                print(f"主页响应 (尝试 {attempt + 1}): {home_response.status_code}")
+                
+                if home_response.status_code == 200:
+                    break
+                    
+                if attempt < max_retries - 1:  # 如果不是最后一次尝试
+                    time.sleep(retry_delay)
+                    
+            except Exception as e:
+                print(f"主页请求失败 (尝试 {attempt + 1}): {str(e)}")
+                if attempt < max_retries - 1:
+                    time.sleep(retry_delay)
+
         # 获取请求体
         body = await request.body()
         
@@ -427,10 +455,11 @@ async def proxy(request: Request):
         headers.pop("content-length", None)
         headers.pop("user-agent", None)
         print(f"{headers}")
+        
         # 构建请求参数
         request_kwargs = {
             "url": target_url,
-            "headers": headers,
+            "headers": {"sec-fetch-dest": "document"},
             "params": params,
             "stream": stream_request  # 设置stream参数
         }
