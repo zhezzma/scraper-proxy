@@ -383,8 +383,8 @@ async def proxy(request: Request):
             #     'platform': 'windows',
             #     'mobile': False
             # },
-            debug=True,
-            delay=10
+            #debug=True,
+            #delay=10
         )
         
         # 从请求中获取cookies并设置到scraper
@@ -409,16 +409,18 @@ async def proxy(request: Request):
         if not home_url:
             # 从target_url中提取home_url
             parsed_url = urlparse(target_url)
-            home_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+            home_url = f"{parsed_url.scheme}://{parsed_url.netloc}/"
 
         # 重试获取主页响应
         max_retries = 10
-        retry_delay = 2  # 重试间隔秒数
+        retry_delay = 1  # 重试间隔秒数
         home_response = None
-        
+
         for attempt in range(max_retries):
             try:
-                home_response = scraper.get(home_url, headers={"sec-fetch-dest": "document"})
+                home_response = scraper.get(home_url, headers= {
+                    "sec-fetch-dest": "document"
+                    })
                 print(f"主页{home_url}响应 (尝试 {attempt + 1}): {home_response.status_code}")
                 
                 if home_response.status_code == 200:
