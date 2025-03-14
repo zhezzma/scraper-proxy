@@ -1,12 +1,17 @@
 - name: My first play
   hosts: hostgroup
   remote_user: root
+  vars:
+    app_name: scraper-proxy
+    app_port: 7860
+    deploy_path: /root/workspace/scraper-proxy
+  
   tasks:
-    - name: 停止旧服务
+    - name: 停止特定应用服务
       shell: |
-        pid=$(ps -ef | grep "uvicorn main:app" | grep -v grep | awk '{print $2}')
+        pid=$(ps -ef | grep "uvicorn main:app" | grep "{{ app_port }}" | grep -v grep | awk '{print $2}')
         if [ -n "$pid" ]; then
-          echo "Stopping process with PID: $pid"
+          echo "Stopping {{ app_name }} process with PID: $pid"
           kill -15 $pid
           sleep 3
           if ps -p $pid > /dev/null 2>&1; then
@@ -14,7 +19,7 @@
             kill -9 $pid
           fi
         else
-          echo "No running process found"
+          echo "No running {{ app_name }} process found"
         fi
       args:
         executable: /bin/bash
@@ -22,32 +27,37 @@
       
     - name: 确认服务已停止
       wait_for:
-        port: 7860
+        port: "{{ app_port }}"
         state: stopped
         timeout: 30
 
     - name: 复制到远程服务器
       copy:
         src: archive/release.tar.gz
-        dest: /root/deploy/scraper-proxy.tar.gz
+        dest: /root/deploy/{{ app_name }}.tar.gz
 
     - name: 解压文件
       shell: |
-        rm -rf /root/workspace/scraper-proxy  
-        mkdir -p /root/workspace/scraper-proxy
-        tar -zxvf /root/deploy/scraper-proxy.tar.gz -C /root/workspace/scraper-proxy
+        rm -rf {{ deploy_path }}  
+        mkdir -p {{ deploy_path }}
+        tar -zxvf /root/deploy/{{ app_name }}.tar.gz -C {{ deploy_path }}
       args:
         executable: /bin/bash
 
     - name: 构建并运行
       shell: |
-        cd /root/workspace/scraper-proxy
+        cd {{ deploy_path }}
         pip install --no-cache-dir -r requirements.txt
-        nohup uvicorn main:app --host 0.0.0.0 --port 7860 > ./nohup.log 2>&1 &
+        echo '#!/bin/bash
+        cd {{ deploy_path }}
+        exec uvicorn main:app --host 0.0.0.0 --port {{ app_port }}
+        ' > {{ deploy_path }}/start.sh
+        chmod +x {{ deploy_path }}/start.sh
+        nohup {{ deploy_path }}/start.sh > {{ deploy_path }}/nohup.log 2>&1 &
       args:
         executable: /bin/bash
 
     - name: 等待服务启动
       wait_for:
-        port: 7860
+        port: "{{ app_port }}"
         timeout: 30
