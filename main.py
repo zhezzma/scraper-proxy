@@ -8,7 +8,7 @@ import uvicorn
 import asyncio
 from urllib.parse import urlparse
 import time
-from curl_cffi import requests 
+from curl_cffi import requests
 from dotenv import load_dotenv
 
 # 加载多个位置的.env文件
@@ -16,7 +16,7 @@ def load_env_files():
     # 优先尝试加载根目录下的.env
     if os.path.exists('.env'):
         load_dotenv('.env')
-    
+
     # 然后尝试加载 /root/deploy/.scraper.env
     deploy_env_path = os.path.join('/root/deploy', '.scraper.env')
     if os.path.exists(deploy_env_path):
@@ -44,6 +44,15 @@ async def stream_generator(response):
     """生成流式响应的生成器函数"""
     for chunk in response.iter_content(chunk_size=8192):
         if chunk:
+            # 打印收到的流内容
+            try:
+                # 尝试解码为文本并打印
+                decoded_chunk = chunk.decode('utf-8', errors='replace')
+                print(f"收到流数据 [大小: {len(chunk)} 字节]: {decoded_chunk}")
+            except Exception as e:
+                # 如果解码失败，打印二进制数据的长度和错误
+                print(f"收到流数据 [大小: {len(chunk)} 字节]: (无法解码为文本: {str(e)})")
+
             yield chunk
             await asyncio.sleep(0.001)  # 让出控制权，保持异步特性
 
@@ -55,7 +64,7 @@ async def make_request(method: str, **kwargs):
     print(f"开始使用{REQUEST_LIB}进行请求")
     if REQUEST_LIB == 'cloudscraper':
         scraper = cloudscraper.create_scraper(delay=10)
-        
+
         # 设置代理
         proxy = os.environ.get('PROXY')
         if proxy:
@@ -63,21 +72,21 @@ async def make_request(method: str, **kwargs):
                 'http': proxy,
                 'https': proxy
             }
-            
+
         # 根据方法发送请求
         return getattr(scraper, method.lower())(**kwargs)
     else:
         # 使用 curl_cffi
         proxy = os.environ.get('PROXY')
         proxies = {'http': proxy, 'https': proxy} if proxy else None
-        
+
         # curl_cffi 的请求配置
         request_config = {
             **kwargs,
             'proxies': proxies,
             'impersonate': 'chrome110',
         }
-        
+
         return requests.request(method, **request_config)
 
 @app.get("/", response_class=HTMLResponse)
@@ -106,7 +115,7 @@ async def proxy(request: Request):
                     detail="未提供有效的x-ip-token header",
                     headers={"WWW-Authenticate": "x-ip-token"}
                 )
-            
+
             # 验证token
             if auth_header != env_token:
                 raise HTTPException(
@@ -118,26 +127,26 @@ async def proxy(request: Request):
         target_url = request.query_params.get("url")
         if not target_url:
             raise HTTPException(status_code=400, detail="必须提供目标URL")
-        
+
         # 获取home_url
         home_url = request.query_params.get("home")
         if not home_url:
             # 从target_url中提取home_url
             parsed_url = urlparse(target_url)
             home_url = f"{parsed_url.scheme}://{parsed_url.netloc}/"
-        
+
         # 检查是否请求流式响应
         stream_request = "stream" in request.query_params and request.query_params["stream"].lower() in ["true", "1", "yes"]
-        
+
         # 获取请求体
         body = await request.body()
-        
+
         # 获取查询参数
         params = dict(request.query_params)
         # 从查询参数中移除url和stream参数
         params.pop("url", None)
         params.pop("stream", None)
-        
+
         # 获取原始请求头
         headers = dict(request.headers)
         # 移除可能导致问题的头
@@ -151,7 +160,7 @@ async def proxy(request: Request):
         headers.pop("host", None)
         headers.pop("referer", None)
         print(f"{headers}")
-        
+
         # 构建请求参数
         request_kwargs = {
             "url": target_url,
@@ -159,14 +168,14 @@ async def proxy(request: Request):
             "params": params,
             "stream": stream_request  # 设置stream参数
         }
-        
+
         # 如果有请求体，添加到请求参数中
         if body:
             request_kwargs["data"] = body
-            
+
         # 使用统一的请求函数发送请求
         response = await make_request(request.method, **request_kwargs)
-        
+
         # 处理流式响应
         if stream_request:
             # 创建响应头字典
@@ -174,7 +183,7 @@ async def proxy(request: Request):
             for header_name, header_value in response.headers.items():
                 if header_name.lower() not in ('content-encoding', 'transfer-encoding', 'content-length'):
                     headers_dict[header_name] = header_value
-            
+
             # 返回流式响应
             return StreamingResponse(
                 stream_generator(response),
@@ -188,18 +197,18 @@ async def proxy(request: Request):
                 content=response.content,
                 status_code=response.status_code,
             )
-            
+
             # 转发响应头
             for header_name, header_value in response.headers.items():
                 if header_name.lower() not in ('content-encoding', 'transfer-encoding', 'content-length'):
                     proxy_response.headers[header_name] = header_value
-                    
+
             # 转发cookies
             for cookie_name, cookie_value in response.cookies.items():
                 proxy_response.set_cookie(key=cookie_name, value=cookie_value)
-                
+
             return proxy_response
-        
+
     except Exception as e:
         error = f"代理请求失败: {str(e)}"
         print(error)
