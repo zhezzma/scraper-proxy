@@ -26,7 +26,7 @@ def load_env_files():
 load_env_files()
 
 app = FastAPI(
-    title="ScraperProxy",
+    title="ScraperRequest",
     description="一个使用CloudScraper进行请求转发的代理，支持流式响应",
     version="0.1.0"
 )

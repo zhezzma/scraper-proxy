@@ -1,4 +1,4 @@
-# ScraperProxy
+# ScraperRequest
 
 一个使用FastAPI和Cloudscraper的服务，用于获取代理外部网站
 
