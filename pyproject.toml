@@ -22,8 +22,11 @@ index-url = "https://mirrors.aliyun.com/pypi/simple/"
 dev = [
     "poethepoet>=0.32.1",
 ]
+
 [tool.poe.tasks]
 start = "uv run main.py"
 dev = "uvicorn main:app --reload --port 7860"
 test = "uv run test.py"
 freeze =  { shell = "uv pip compile pyproject.toml -o requirements.txt" }
+docker-build = "docker build --progress=plain -t zhezzma/scraperproxy:latest ."
+docker-push = "docker push zhezzma/scraperproxy:latest"
